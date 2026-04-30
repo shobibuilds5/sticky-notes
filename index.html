@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shobi's Sticky Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --yellow:#FFE566;--yellow-s:rgba(245,200,0,0.3);
+  --pink:#FFB3C6;--pink-s:rgba(255,107,157,0.3);
+  --blue:#A8D8F0;--blue-s:rgba(75,174,232,0.3);
+  --green:#B8F0B0;--green-s:rgba(60,180,60,0.3);
+  --orange:#FFCF8A;--orange-s:rgba(240,150,30,0.3);
+  --purple:#D8B8F8;--purple-s:rgba(150,80,220,0.3);
+  --indigo:#B8C8F8;--indigo-s:rgba(80,100,220,0.3);
+  --bg:#F5F0E8;--text:#2C2416;--muted:#8B7355;--cork:#C8A96E;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100vh;color:var(--text);}
+header{padding:24px 32px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.logo{font-family:'Caveat',cursive;font-size:32px;font-weight:700;}
+.logo span{color:var(--cork);}
+.tabs{display:flex;gap:4px;background:rgba(0,0,0,.06);padding:4px;border-radius:12px;}
+.tab{padding:8px 20px;border-radius:8px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s;}
+.tab.active{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.add-bar{padding:20px 32px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.color-pick{display:flex;gap:6px;flex-wrap:wrap;}
+.color-btn{width:26px;height:26px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s;flex-shrink:0;}
+.color-btn:hover{transform:scale(1.15);}
+.color-btn.selected{border-color:var(--text);transform:scale(1.1);}
+.cb-y{background:var(--yellow);}
+.cb-p{background:var(--pink);}
+.cb-b{background:var(--blue);}
+.cb-g{background:var(--green);}
+.cb-o{background:var(--orange);}
+.cb-pu{background:var(--purple);}
+.cb-i{background:var(--indigo);}
+.title-input{flex:1;min-width:160px;padding:10px 16px;border-radius:10px;border:2px solid transparent;background:#fff;font-family:'Caveat',cursive;font-size:20px;color:var(--text);outline:none;transition:border-color .2s;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.title-input:focus{border-color:var(--cork);}
+.title-input::placeholder{color:#C0B090;}
+.add-btn{padding:10px 22px;border-radius:10px;border:none;background:var(--text);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+.add-btn:hover{opacity:.85;}
+.board,.arc-board{padding:16px 32px 48px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;}
+.note{width:220px;min-height:180px;border-radius:4px;padding:20px 18px 16px;display:flex;flex-direction:column;gap:10px;position:relative;cursor:grab;}
+.note:nth-child(odd){transform:rotate(-1.2deg);}
+.note:nth-child(even){transform:rotate(.8deg);}
+.note:hover{transform:rotate(0) scale(1.03) translateY(-4px);z-index:10;}
+.note.dragging{opacity:.5;transform:rotate(3deg) scale(1.05);z-index:999;cursor:grabbing;}
+.note.drag-over{outline:2px dashed rgba(0,0,0,.3);outline-offset:4px;}
+.note::before{content:'';position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:48px;height:20px;background:rgba(255,255,255,.55);border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+.note.yellow,.arc-note.yellow{background:var(--yellow);box-shadow:4px 6px 18px var(--yellow-s);}
+.note.pink,.arc-note.pink{background:var(--pink);box-shadow:4px 6px 18px var(--pink-s);}
+.note.blue,.arc-note.blue{background:var(--blue);box-shadow:4px 6px 18px var(--blue-s);}
+.note.green,.arc-note.green{background:var(--green);box-shadow:4px 6px 18px var(--green-s);}
+.note.orange,.arc-note.orange{background:var(--orange);box-shadow:4px 6px 18px var(--orange-s);}
+.note.purple,.arc-note.purple{background:var(--purple);box-shadow:4px 6px 18px var(--purple-s);}
+.note.indigo,.arc-note.indigo{background:var(--indigo);box-shadow:4px 6px 18px var(--indigo-s);}
+.note-title{font-family:'Caveat',cursive;font-size:22px;font-weight:700;color:var(--text);word-break:break-word;line-height:1.2;padding-right:22px;}
+.note-divider{height:1.5px;background:rgba(0,0,0,.1);border-radius:1px;}
+.task-list{display:flex;flex-direction:column;gap:6px;flex:1;}
+.task-row{display:flex;align-items:flex-start;gap:8px;font-family:'Caveat',cursive;font-size:17px;line-height:1.35;word-break:break-word;}
+.task-row input[type=checkbox]{margin-top:3px;width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:#333;}
+.task-edit{flex:1;border:none;background:transparent;font-family:'Caveat',cursive;font-size:17px;color:var(--text);outline:none;padding:0;line-height:1.35;word-break:break-word;cursor:text;border-bottom:1px solid transparent;}
+.task-edit:hover{border-bottom-color:rgba(0,0,0,.2);}
+.task-edit:focus{border-bottom-color:rgba(0,0,0,.4);background:rgba(255,255,255,.3);border-radius:3px;padding:0 3px;}
+.task-add{display:flex;gap:6px;margin-top:4px;}
+.task-inp{flex:1;border:none;background:rgba(255,255,255,.4);border-radius:6px;padding:4px 8px;font-family:'Caveat',cursive;font-size:16px;color:var(--text);outline:none;}
+.task-inp:focus{background:rgba(255,255,255,.65);}
+.task-inp::placeholder{color:rgba(44,36,22,.35);}
+.task-go{background:rgba(0,0,0,.12);border:none;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:16px;color:var(--text);}
+.task-go:hover{background:rgba(0,0,0,.22);}
+.del-btn{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.1);border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:13px;color:var(--text);opacity:0;display:flex;align-items:center;justify-content:center;}
+.note:hover .del-btn{opacity:.5;}
+.del-btn:hover{opacity:1!important;background:rgba(200,0,0,.2);}
+.arc-note{width:220px;min-height:140px;border-radius:4px;padding:20px 18px 16px;display:flex;flex-direction:column;gap:8px;position:relative;opacity:.8;}
+.arc-note:nth-child(odd){transform:rotate(-1deg);}
+.arc-note:nth-child(even){transform:rotate(.7deg);}
+.arc-note::before{content:'';position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:48px;height:20px;background:rgba(255,255,255,.55);border-radius:2px;}
+.arc-title{width:100%;border:none;background:transparent;font-family:'Caveat',cursive;font-size:21px;font-weight:700;color:var(--text);word-break:break-word;outline:none;padding:0;border-bottom:1px dashed transparent;cursor:text;}
+.arc-title:hover{border-bottom-color:rgba(0,0,0,.25);}
+.arc-title:focus{border-bottom-color:rgba(0,0,0,.4);}
+.arc-divider{height:1.5px;background:rgba(0,0,0,.1);border-radius:1px;}
+.arc-tasks{display:flex;flex-direction:column;gap:5px;flex:1;}
+.arc-task{font-family:'Caveat',cursive;font-size:16px;color:var(--text);text-decoration:line-through;opacity:.5;word-break:break-word;}
+.restore-btn{margin-top:6px;background:rgba(255,255,255,.6);border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--text);cursor:pointer;}
+.restore-btn:hover{background:rgba(255,255,255,.9);}
+.statusbar{position:fixed;bottom:20px;right:24px;background:var(--text);color:#fff;padding:8px 16px;border-radius:10px;font-size:13px;opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s;pointer-events:none;z-index:9999;}
+.statusbar.on{opacity:1;transform:translateY(0);}
+.statusbar.err{background:#c0392b;}
+.empty{padding:60px 32px;text-align:center;color:var(--muted);font-family:'Caveat',cursive;font-size:22px;width:100%;}
+@media(max-width:600px){
+  header,.add-bar,.board,.arc-board{padding-left:16px;padding-right:16px;}
+  .note,.arc-note{width:calc(50% - 12px);min-width:130px;}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Shobi's <span>Notes</span> 📌</div>
+  <div class="tabs">
+    <button class="tab active" id="tab-active" onclick="switchTab('active')">Active</button>
+    <button class="tab" id="tab-archive" onclick="switchTab('archive')">Archive</button>
+  </div>
+</header>
+<div class="add-bar" id="add-bar">
+  <div class="color-pick">
+    <div class="color-btn cb-y selected" onclick="pickColor('Yellow',this)" title="Yellow"></div>
+    <div class="color-btn cb-p" onclick="pickColor('Pink',this)" title="Pink"></div>
+    <div class="color-btn cb-b" onclick="pickColor('Blue',this)" title="Blue"></div>
+    <div class="color-btn cb-g" onclick="pickColor('Green',this)" title="Green"></div>
+    <div class="color-btn cb-o" onclick="pickColor('Orange',this)" title="Orange"></div>
+    <div class="color-btn cb-pu" onclick="pickColor('Purple',this)" title="Purple"></div>
+    <div class="color-btn cb-i" onclick="pickColor('Indigo',this)" title="Indigo"></div>
+  </div>
+  <input class="title-input" id="new-title" placeholder="Note title..." maxlength="60"
+    onkeydown="if(event.key==='Enter')addNote()">
+  <button class="add-btn" onclick="addNote()">+ Add Note</button>
+</div>
+<div class="board" id="board"></div>
+<div class="arc-board" id="arc-board" style="display:none"></div>
+<div class="statusbar" id="sb"></div>
+
+<script>
+const DB='1942f8cd-bdc3-4568-89dd-c8c99e243003';
+let notes=[],selColor='Yellow',curTab='active',dragId=null;
+
+// Auto-detect local vs Netlify
+const IS_LOCAL=window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1';
+
+function clr(c){return(c||'Yellow').toLowerCase();}
+
+async function req(path,method,body){
+  let res;
+  if(IS_LOCAL){
+    const o={method:method||'GET',headers:{'Content-Type':'application/json'}};
+    if(body)o.body=JSON.stringify(body);
+    res=await fetch('/notion'+path,o);
+  }else{
+    res=await fetch('/.netlify/functions/notion',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({method:method||'GET',path,body})
+    });
+  }
+  const d=await res.json();
+  if(!res.ok)throw new Error(d.message||'error');
+  return d;
+}
+
+function st(msg,err){
+  const e=document.getElementById('sb');
+  e.textContent=msg;
+  e.className='statusbar on'+(err?' err':'');
+  clearTimeout(e._t);
+  e._t=setTimeout(()=>e.className='statusbar',2800);
+}
+
+async function load(){
+  try{
+    st('Loading...');
+    const d=await req('/databases/'+DB+'/query','POST',{sorts:[{timestamp:'created_time',direction:'descending'}]});
+    notes=await Promise.all(d.results.map(async p=>{
+      const tasks=await loadTasks(p.id);
+      return{
+        id:p.id,
+        title:p.properties.Note?.title?.[0]?.text?.content||'Untitled',
+        color:p.properties.Color?.select?.name||'Yellow',
+        tasks
+      };
+    }));
+    render();st('Loaded ✓');
+  }catch(e){st('Load failed: '+e.message,true);}
+}
+
+async function loadTasks(pid){
+  try{
+    const d=await req('/blocks/'+pid+'/children');
+    return d.results.filter(b=>b.type==='to_do').map(b=>({
+      id:b.id,
+      text:b.to_do.rich_text?.[0]?.text?.content||'',
+      done:b.to_do.checked
+    }));
+  }catch{return[];}
+}
+
+function pickColor(c,el){
+  selColor=c;
+  document.querySelectorAll('.color-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function addNote(){
+  const inp=document.getElementById('new-title');
+  const title=inp.value.trim();
+  if(!title){inp.focus();return;}
+  st('Saving...');
+  try{
+    const d=await req('/pages','POST',{
+      parent:{database_id:DB},
+      properties:{
+        Note:{title:[{text:{content:title}}]},
+        Color:{select:{name:selColor}},
+        Status:{select:{name:'Active'}}
+      }
+    });
+    notes.unshift({id:d.id,title,color:selColor,tasks:[]});
+    inp.value='';render();st('Saved ✓');
+  }catch(e){st('Save failed: '+e.message,true);}
+}
+
+async function addTask(nid,text){
+  if(!text.trim())return;
+  st('Saving...');
+  try{
+    const d=await req('/blocks/'+nid+'/children','PATCH',{
+      children:[{object:'block',type:'to_do',to_do:{
+        rich_text:[{type:'text',text:{content:text.trim()}}],checked:false
+      }}]
+    });
+    const n=notes.find(x=>x.id===nid);
+    n.tasks.push({id:d.results?.[0]?.id,text:text.trim(),done:false});
+    render();st('Saved ✓');
+  }catch(e){st('Save failed: '+e.message,true);}
+}
+
+async function editTask(nid,tid,idx,val){
+  const n=notes.find(x=>x.id===nid);
+  if(!n||!val.trim())return;
+  const t=val.trim();
+  if(t===n.tasks[idx].text)return;
+  n.tasks[idx].text=t;
+  try{
+    if(tid)await req('/blocks/'+tid,'PATCH',{to_do:{rich_text:[{type:'text',text:{content:t}}]}});
+    st('Saved ✓');
+  }catch(e){st('Edit failed',true);}
+}
+
+async function toggleTask(nid,tid,idx){
+  const n=notes.find(x=>x.id===nid);
+  if(!n)return;
+  n.tasks[idx].done=!n.tasks[idx].done;
+  render();
+  try{
+    if(tid)await req('/blocks/'+tid,'PATCH',{to_do:{checked:n.tasks[idx].done}});
+  }catch(e){st('Sync failed',true);}
+}
+
+async function restoreItems(nid){
+  const n=notes.find(x=>x.id===nid);
+  if(!n)return;
+  const done=n.tasks.filter(t=>t.done);
+  st('Restoring...');
+  try{
+    await Promise.all(done.map(t=>t.id?req('/blocks/'+t.id,'PATCH',{to_do:{checked:false}}):Promise.resolve()));
+    done.forEach(t=>t.done=false);
+    render();st('Restored ✓');
+  }catch(e){st('Restore failed',true);}
+}
+
+async function renameNote(nid,val){
+  const n=notes.find(x=>x.id===nid);
+  if(!n||!val.trim()||val.trim()===n.title)return;
+  n.title=val.trim();
+  try{
+    await req('/pages/'+nid,'PATCH',{properties:{Note:{title:[{text:{content:n.title}}]}}});
+    st('Renamed ✓');
+  }catch(e){st('Rename failed',true);}
+}
+
+async function delNote(nid){
+  if(!confirm('Delete this note?'))return;
+  notes=notes.filter(x=>x.id!==nid);
+  render();
+  try{await req('/pages/'+nid,'PATCH',{archived:true});st('Deleted ✓');}
+  catch(e){st('Delete failed',true);}
+}
+
+function dragStart(e,id){
+  dragId=id;e.dataTransfer.effectAllowed='move';
+  setTimeout(()=>document.getElementById('n-'+id)?.classList.add('dragging'),0);
+}
+function dragEnd(e,id){
+  document.getElementById('n-'+id)?.classList.remove('dragging');
+  document.querySelectorAll('.note').forEach(x=>x.classList.remove('drag-over'));
+}
+function dragOver(e,id){
+  e.preventDefault();
+  document.querySelectorAll('.note').forEach(x=>x.classList.remove('drag-over'));
+  if(id!==dragId)document.getElementById('n-'+id)?.classList.add('drag-over');
+}
+function drop(e,tid){
+  e.preventDefault();
+  document.querySelectorAll('.note').forEach(x=>x.classList.remove('drag-over'));
+  if(!dragId||dragId===tid)return;
+  const si=notes.findIndex(x=>x.id===dragId);
+  const ti=notes.findIndex(x=>x.id===tid);
+  if(si<0||ti<0)return;
+  const[m]=notes.splice(si,1);notes.splice(ti,0,m);
+  render();dragId=null;
+}
+
+function render(){
+  const board=document.getElementById('board');
+  const arcBoard=document.getElementById('arc-board');
+  const addBar=document.getElementById('add-bar');
+
+  if(curTab==='active'){
+    arcBoard.style.display='none';
+    board.style.display='flex';
+    addBar.style.display='flex';
+    const active=notes.filter(n=>n.tasks.length===0||n.tasks.some(t=>!t.done));
+    if(!active.length){board.innerHTML='<div class="empty">No notes yet — add one above! 🌟</div>';return;}
+    board.innerHTML=active.map(n=>{
+      const shown=n.tasks.filter(t=>!t.done);
+      return`<div class="note ${clr(n.color)}" id="n-${n.id}"
+        draggable="true"
+        ondragstart="dragStart(event,'${n.id}')"
+        ondragend="dragEnd(event,'${n.id}')"
+        ondragover="dragOver(event,'${n.id}')"
+        ondrop="drop(event,'${n.id}')">
+        <button class="del-btn" onclick="delNote('${n.id}')">×</button>
+        <div class="note-title">${x(n.title)}</div>
+        <div class="note-divider"></div>
+        <div class="task-list">${shown.map(t=>{
+          const ri=n.tasks.findIndex(q=>q.id===t.id);
+          return`<div class="task-row">
+            <input type="checkbox" onchange="toggleTask('${n.id}','${t.id||''}',${ri})">
+            <input class="task-edit" value="${x(t.text)}"
+              ondragstart="event.stopPropagation()"
+              onblur="editTask('${n.id}','${t.id||''}',${ri},this.value)"
+              onkeydown="if(event.key==='Enter')this.blur()">
+          </div>`;
+        }).join('')}</div>
+        <div class="task-add">
+          <input class="task-inp" id="ti-${n.id}" placeholder="+ add item"
+            ondragstart="event.stopPropagation()"
+            onkeydown="if(event.key==='Enter'){addTask('${n.id}',this.value);this.value='';}">
+          <button class="task-go" onclick="(function(){var i=document.getElementById('ti-${n.id}');addTask('${n.id}',i.value);i.value='';})()">+</button>
+        </div>
+      </div>`;
+    }).join('');
+  }else{
+    board.style.display='none';
+    addBar.style.display='none';
+    arcBoard.style.display='flex';
+    const withDone=notes.filter(n=>n.tasks.some(t=>t.done));
+    if(!withDone.length){arcBoard.innerHTML='<div class="empty">Nothing archived yet 📦</div>';return;}
+    arcBoard.innerHTML=withDone.map(n=>{
+      const done=n.tasks.filter(t=>t.done);
+      return`<div class="arc-note ${clr(n.color)}">
+        <input class="arc-title" value="${x(n.title)}"
+          onblur="renameNote('${n.id}',this.value)"
+          onkeydown="if(event.key==='Enter')this.blur()">
+        <div class="arc-divider"></div>
+        <div class="arc-tasks">${done.map(t=>`<div class="arc-task">${x(t.text)}</div>`).join('')}</div>
+        <button class="restore-btn" onclick="restoreItems('${n.id}')">↑ restore to active</button>
+      </div>`;
+    }).join('');
+  }
+}
+
+function switchTab(t){
+  curTab=t;
+  document.getElementById('tab-active').classList.toggle('active',t==='active');
+  document.getElementById('tab-archive').classList.toggle('active',t==='archive');
+  render();
+}
+
+function x(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+load();
+</script>
+</body>
+</html>
