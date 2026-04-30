@@ -18,7 +18,7 @@ exports.handler = async (event) => {
     const response = await fetch('https://api.notion.com/v1' + path, {
       method: method || 'GET',
       headers: {
-        'Authorization': 'Bearer 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',
+        'Authorization': 'Bearer ' + process.env.NOTION_TOKEN,
         'Notion-Version': '2022-06-28',
         'Content-Type': 'application/json'
       },
