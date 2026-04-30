@@ -61,7 +61,7 @@ header{padding:24px 32px 0;display:flex;align-items:center;justify-content:space
 .task-list{display:flex;flex-direction:column;gap:6px;flex:1;}
 .task-row{display:flex;align-items:flex-start;gap:8px;font-family:'Caveat',cursive;font-size:17px;line-height:1.35;word-break:break-word;}
 .task-row input[type=checkbox]{margin-top:3px;width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:#333;}
-.task-edit{flex:1;border:none;background:transparent;font-family:'Caveat',cursive;font-size:17px;color:var(--text);outline:none;padding:0;line-height:1.35;word-break:break-word;cursor:text;border-bottom:1px solid transparent;}
+.task-edit{flex:1;border:none;background:transparent;font-family:'Caveat',cursive;font-size:17px;color:var(--text);outline:none;padding:0;line-height:1.35;word-break:break-word;cursor:text;border-bottom:1px solid transparent;resize:none;overflow:hidden;min-height:24px;}
 .task-edit:hover{border-bottom-color:rgba(0,0,0,.2);}
 .task-edit:focus{border-bottom-color:rgba(0,0,0,.4);background:rgba(255,255,255,.3);border-radius:3px;padding:0 3px;}
 .task-add{display:flex;gap:6px;margin-top:4px;}
@@ -269,7 +269,16 @@ async function renameNote(nid,val){
 }
 
 async function delNote(nid){
-  if(!confirm('Delete this note?'))return;
+  const btn=document.getElementById('delbtn-'+nid);
+  if(!btn)return;
+  if(btn.dataset.confirm!=='1'){
+    btn.dataset.confirm='1';
+    btn.textContent='?';
+    btn.style.background='rgba(200,0,0,0.25)';
+    btn.style.opacity='1';
+    setTimeout(()=>{if(btn.dataset.confirm==='1'){btn.dataset.confirm='0';btn.textContent='×';btn.style.background='';btn.style.opacity='';}},2500);
+    return;
+  }
   notes=notes.filter(x=>x.id!==nid);
   render();
   try{await req('/pages/'+nid,'PATCH',{archived:true});st('Deleted ✓');}
@@ -319,17 +328,19 @@ function render(){
         ondragend="dragEnd(event,'${n.id}')"
         ondragover="dragOver(event,'${n.id}')"
         ondrop="drop(event,'${n.id}')">
-        <button class="del-btn" onclick="delNote('${n.id}')">×</button>
+        <button class="del-btn" id="delbtn-${n.id}" onclick="delNote('${n.id}')">×</button>
         <div class="note-title">${x(n.title)}</div>
         <div class="note-divider"></div>
         <div class="task-list">${shown.map(t=>{
           const ri=n.tasks.findIndex(q=>q.id===t.id);
           return`<div class="task-row">
             <input type="checkbox" onchange="toggleTask('${n.id}','${t.id||''}',${ri})">
-            <input class="task-edit" value="${x(t.text)}"
+            <textarea class="task-edit" rows="1"
               ondragstart="event.stopPropagation()"
+              oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
               onblur="editTask('${n.id}','${t.id||''}',${ri},this.value)"
-              onkeydown="if(event.key==='Enter')this.blur()">
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.blur();}"
+            >${x(t.text)}</textarea>
           </div>`;
         }).join('')}</div>
         <div class="task-add">
